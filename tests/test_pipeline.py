@@ -148,11 +148,11 @@ def test_failed_assertion_leaves_previous_database_untouched(tmp_path, built):
 
 
 @pytest.mark.parametrize("page", ["Overview", "Articles", "Categories", "Newsletter", "Data health"])
-def test_dashboard_page_renders(page):
+def test_dashboard_page_renders(page, monkeypatch):
     # The app reads data/analytics.duckdb and builds it on first run if absent,
     # so this also exercises the fresh-clone path in CI.
     from streamlit.testing.v1 import AppTest
+    monkeypatch.setenv("DASH_PAGE", page)
     app = AppTest.from_file(str(ROOT / "app" / "streamlit_app.py"), default_timeout=60)
     app.run()
-    app.sidebar.radio[0].set_value(page).run()
     assert not app.exception, [e.value for e in app.exception]

@@ -143,6 +143,7 @@ def build(raw: Path, db_path: Path) -> dict:
 def run_assertions(con, raw_totals: dict, links: pd.DataFrame, slugs: set[str]) -> list[dict]:
     """Invariants the schema cannot express. Each guards a real failure mode."""
     out = []
+    SOURCE_NAME = {"legacy_property": "old-domain", "new_property": "new-domain"}
 
     def check(name, ok, detail):
         out.append({"name": name, "ok": bool(ok), "detail": detail})
@@ -150,7 +151,7 @@ def run_assertions(con, raw_totals: dict, links: pd.DataFrame, slugs: set[str]) 
     for source, raw_total in raw_totals.items():
         loaded = con.execute("SELECT COALESCE(SUM(pageviews),0) FROM fact_page_daily WHERE source=?",
                              [source]).fetchone()[0]
-        check(f"every {source} pageview accounted for",
+        check(f"every {SOURCE_NAME[source]} pageview accounted for",
               loaded == raw_total, f"raw {raw_total:,} vs loaded {loaded:,}")
 
     buckets = con.execute("SELECT COALESCE(SUM(pageviews),0) FROM v_pageview_buckets").fetchone()[0]
@@ -166,12 +167,12 @@ def run_assertions(con, raw_totals: dict, links: pd.DataFrame, slugs: set[str]) 
 
     double = con.execute("""SELECT COUNT(*) FROM v_article_traffic
                             WHERE daily_pageviews <> pageviews_old_domain + pageviews_new_domain""").fetchone()[0]
-    check("old + new domain sum per slug", double == 0, f"{double} articles where the parts don't add up")
+    check("old- and new-domain views add up for every article", double == 0, f"{double} articles where the parts don't add up")
 
     pre_new = con.execute("""SELECT COUNT(*) FROM fact_page_daily
                              WHERE source='new_property' AND date < DATE '2026-06-10'""").fetchone()[0]
-    check("no new-property data before it existed", pre_new == 0,
-          f"{pre_new} rows dated before the property was created (bad re-bucketing)")
+    check("no new-domain data before measurement began", pre_new == 0,
+          f"{pre_new} rows dated before the property was created (would mean bad timezone re-bucketing)")
 
     focus = con.execute("SELECT COUNT(*) FROM v_focus_area_coverage").fetchone()[0]
     check("every seeded focus area reported, even with no articles", focus == len(FOCUS_AREAS),

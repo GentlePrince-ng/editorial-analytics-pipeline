@@ -48,14 +48,35 @@ SECONDARY = ["jobs", "press-release", "weekly-roundup"]
 FOCUS_AREAS = ["climate", "health", "education", "economy", "governance",
                "technology", "culture", "agriculture", "urban-mobility", "ai-policy"]
 
-WORDS = ("river harbour council budget school clinic market drought solar policy "
-         "reform data loan bridge port vote audit water grid farm wage youth tax "
-         "road rail flood heat price trade court health climate ferry").split()
+# Headline templates in a fictional city, so the demo reads like a newsroom.
+PLACES = ["Port Avalon", "Harbour Hill", "Dockside", "Eastmere", "the Riverside wards", "North Quay"]
+TOPICS = ["school meals", "the ferry service", "flood defences", "clinic waiting times", "bus fares",
+          "the housing levy", "street lighting", "the solar programme", "market stall fees",
+          "water tariffs", "youth employment", "the bridge repair fund", "night-shift nursing",
+          "recycling collections", "the port expansion"]
+GROUPS = ["renters", "small traders", "commuters", "parents", "nurses", "first-time voters", "fishers"]
+TEMPLATES = [
+    "{place} council approves {n}% rise in spending on {topic}",
+    "What the new budget means for {topic}",
+    "Explainer: who pays for {topic}, and why it is changing",
+    "Data: {topic} costs have risen {n}% since {year}",
+    "{Group} in {place} raise concerns over {topic}",
+    "Audit finds gaps in how {topic} money was spent",
+    "Opinion: {place} cannot afford to cut {topic}",
+    "Five charts that explain {topic} in {place}",
+    "Inside the fight over {topic} in {place}",
+    "How {topic} became an election issue",
+    "Residents of {place} weigh in on plans for {topic}",
+    "Court pauses changes to {topic} after challenge",
+]
 
 
 def _title(rng: np.random.Generator) -> str:
-    w = rng.choice(WORDS, size=rng.integers(4, 8), replace=True)
-    return " ".join(w).capitalize()
+    group = str(rng.choice(GROUPS))
+    t = str(rng.choice(TEMPLATES)).format(
+        place=rng.choice(PLACES), topic=rng.choice(TOPICS), n=int(rng.integers(4, 38)),
+        year=int(rng.integers(2016, 2024)), Group=group.capitalize())
+    return t[0].upper() + t[1:]
 
 
 def build_registry(rng: np.random.Generator, n: int, today: dt.date) -> pd.DataFrame:
@@ -72,7 +93,8 @@ def build_registry(rng: np.random.Generator, n: int, today: dt.date) -> pd.DataF
         if not secondary and rng.random() < 0.04:
             url_cat = rng.choice([c for c in EDITORIAL if c != cat])
         title = _title(rng)
-        slug = f"{'-'.join(title.lower().split()[:5])}-{i:04d}"
+        words = "".join(c if c.isalnum() or c == " " else " " for c in title.lower()).split()
+        slug = f"{'-'.join(words[:6])}-{i:04d}"
         rows.append({
             "article_id": i + 1,
             "slug": slug,
