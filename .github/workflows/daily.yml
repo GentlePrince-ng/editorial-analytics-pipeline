@@ -1,0 +1,43 @@
+name: daily-build
+
+# Every morning: regenerate the synthetic sources for today, rebuild the
+# database with its assertions, and publish the health digest to the run
+# summary. A failed assertion or stale source turns the run red; the digest
+# is written on every run, so silence is itself a signal.
+on:
+  schedule:
+    - cron: "30 6 * * *"   # 06:30 UTC
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: pip install -r requirements.txt pytest==9.1.1
+      - name: Tests
+        run: pytest -q tests
+      - name: Generate today's sources
+        run: python src/generate_synthetic.py
+      - name: Build database (fails on any broken invariant)
+        run: python src/build_db.py
+      - name: Health digest
+        run: python src/diagnostics.py
+      - name: Keep the build report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-report
+          path: data/build_report.json
+          if-no-files-found: warn

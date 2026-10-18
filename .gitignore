@@ -1,0 +1,12 @@
+# Built artefacts: pure functions of the generator and build script
+data/
+*.duckdb
+*.building.duckdb
+
+__pycache__/
+.pytest_cache/
+.venv/
+.env
+.streamlit/secrets.toml
+Thumbs.db
+.DS_Store

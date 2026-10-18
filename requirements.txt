@@ -1,0 +1,11 @@
+# Pinned to the versions this repo is tested against. Streamlit Community
+# Cloud reinstalls on every rebuild, so an unpinned requirement can change
+# what runs without a single commit. Move a version deliberately, test, and
+# commit the change.
+duckdb==1.5.5
+pandas==3.0.5
+pyarrow==24.0.0
+numpy==2.5.1
+streamlit==1.60.0
+altair==6.2.2
+tzdata==2026.3
