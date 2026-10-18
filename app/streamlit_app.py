@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+from datetime import date
 import sys
 from pathlib import Path
 
@@ -24,12 +25,23 @@ DB = ROOT / "data" / "analytics.duckdb"
 st.set_page_config(page_title="Editorial Analytics", page_icon="📰", layout="wide")
 
 
+def db_is_current() -> bool:
+    """True if the database exists and was generated for today. On a host
+    that keeps running for weeks (Streamlit Cloud), regenerating daily keeps
+    the synthetic newsroom 'live' instead of slowly going stale."""
+    manifest = ROOT / "data" / "raw" / "manifest.json"
+    if not DB.exists() or not manifest.exists():
+        return False
+    return json.loads(manifest.read_text()).get("generated_for") == date.today().isoformat()
+
+
 def ensure_db() -> None:
-    if DB.exists():
+    if db_is_current():
         return
-    with st.spinner("First run: generating synthetic data and building the database…"):
+    with st.spinner("Generating today's synthetic data and rebuilding the database…"):
         for script in ("generate_synthetic.py", "build_db.py"):
             subprocess.run([sys.executable, str(ROOT / "src" / script)], check=True, cwd=ROOT)
+    q.clear()  # cached query results belong to the previous build
 
 
 @st.cache_data(ttl=600)

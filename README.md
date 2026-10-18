@@ -3,6 +3,8 @@
 **Turn messy, multi-source publishing analytics into one set of numbers you
 can defend, and prove it every morning.**
 
+**Live demo:** https://editorial-analytics-pipelinedemo.streamlit.app/ (it regenerates its synthetic data daily)
+
 ```
  CMS registry ─┐
  analytics A ──┤   (old domain, daily)
